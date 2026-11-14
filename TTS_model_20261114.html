@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>TTSモデル解説と商用利用ガイド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#fbfbf9; --surface:#ffffff; --surface2:#f1f2ee; --ink:#1c2220; --ink2:#4c5751; --line:#dde1da;
+    --teal:#0b6e63; --teal-soft:#e2f0ec; --amber:#9a6206; --amber-soft:#fbf0d7; --red:#b3362b; --red-soft:#fbe9e6;
+    --grey:#5c665f; --grey-soft:#eceee9; --accent:#0b6e63; --chart:#0b6e63; --chart2:#c98a12;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121614; --surface:#1a1f1d; --surface2:#222825; --ink:#e8ece9; --ink2:#aeb8b2; --line:#333b37;
+      --teal:#4fc4b2; --teal-soft:#17332e; --amber:#e0aa4a; --amber-soft:#3a2d12; --red:#f08276; --red-soft:#3d1e1a;
+      --grey:#9aa69e; --grey-soft:#262c29; --accent:#4fc4b2; --chart:#4fc4b2; --chart2:#e0aa4a;
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP",system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;font-size:16px;line-height:1.75;-webkit-text-size-adjust:100%}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  main{max-width:1060px;margin:0 auto;padding:0 20px 72px}
+  a{color:var(--accent);text-underline-offset:3px}
+  button,[role="button"],summary{min-height:2.25rem}
+
+  /* ---------- hero ---------- */
+  .hero{padding:44px 0 8px;border-bottom:3px solid var(--ink)}
+  .hero .dateline{font-size:.82rem;color:var(--ink2);letter-spacing:.04em}
+  .hero h1{font-size:clamp(1.9rem,5.2vw,3.1rem);line-height:1.25;font-weight:900;margin:.35em 0 .3em;letter-spacing:.01em}
+  .hero .lede{font-size:1.06rem;color:var(--ink2);max-width:46em;margin:0 0 18px}
+  .keybox{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--teal);padding:18px 20px 8px;margin:22px 0 6px}
+  .keybox h2{font-size:1rem;margin:0 0 8px;letter-spacing:.06em}
+  .keybox ul{margin:0;padding-left:1.25em}
+  .keybox li{margin-bottom:10px}
+  .keybox strong{color:var(--teal)}
+  .warnline{font-size:.86rem;color:var(--ink2);margin:12px 0 0}
+
+  /* ---------- nav ---------- */
+  nav.toc{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;padding:8px 0;margin-top:18px;scrollbar-width:none}
+  nav.toc::-webkit-scrollbar{display:none}
+  nav.toc a{flex:0 0 auto;text-decoration:none;color:var(--ink);font-size:.86rem;font-weight:700;padding:8px 12px;border-radius:999px;min-height:36px;display:inline-flex;align-items:center}
+  nav.toc a:hover,nav.toc a:focus-visible{background:var(--surface2)}
+  @media (max-width:720px){nav.toc{flex-wrap:wrap;overflow-x:visible}}
+
+  section{padding:38px 0 6px;scroll-margin-top:72px}
+  section>h2{font-size:clamp(1.35rem,3.4vw,1.8rem);font-weight:900;line-height:1.35;margin:0 0 6px;display:flex;align-items:baseline;gap:.55em}
+  section>h2 .no{font-family:"IBM Plex Mono",monospace;font-size:.72em;color:var(--teal);font-weight:600}
+  section>.intro{color:var(--ink2);max-width:48em;margin:0 0 20px}
+  h3.sub{font-size:1.08rem;font-weight:900;margin:30px 0 10px}
+  p{margin:0 0 14px}
+  .small{font-size:.86rem;color:var(--ink2)}
+  .note{background:var(--amber-soft);border:1px solid var(--line);padding:12px 16px;font-size:.92rem;margin:16px 0}
+  .note b{color:var(--amber)}
+
+  /* ---------- timeline ---------- */
+  .tl{border-left:2px solid var(--line);margin:8px 0 0 6px;padding-left:0;list-style:none}
+  .tl li{position:relative;padding:0 0 22px 26px}
+  .tl li::before{content:"";position:absolute;left:-7px;top:9px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:3px solid var(--teal)}
+  .tl .gen{font-weight:900;font-size:1.02rem}
+  .tl .gen .rep{font-weight:500;color:var(--ink2);font-size:.9rem;margin-left:.5em}
+  .tl p{margin:2px 0 0;font-size:.94rem}
+  .tl .solved{color:var(--teal);font-weight:700}
+  .tl .left{color:var(--red);font-weight:700}
+
+  /* ---------- badges ---------- */
+  .badge{display:inline-flex;align-items:center;gap:.3em;font-size:.78rem;font-weight:700;padding:2px 10px;border-radius:999px;white-space:nowrap;line-height:1.6}
+  .b-ok{background:var(--teal-soft);color:var(--teal)}
+  .b-cond{background:var(--amber-soft);color:var(--amber)}
+  .b-ng{background:var(--red-soft);color:var(--red)}
+  .b-q{background:var(--grey-soft);color:var(--grey)}
+  .tag{display:inline-block;font-size:.74rem;font-weight:700;color:var(--ink2);background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:1px 7px;margin:0 4px 4px 0}
+
+  /* ---------- model cards ---------- */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px}
+  .filters button{font:inherit;font-size:.9rem;font-weight:700;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 16px;cursor:pointer;min-height:40px}
+  .filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  .filters button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+  .card h3{margin:0;font-size:1.05rem;font-weight:900;line-height:1.4}
+  .card h3 .org{font-size:.8rem;color:var(--ink2);font-weight:500;display:block}
+  .card .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .card dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:.9rem}
+  .card dt{color:var(--ink2);font-weight:700;white-space:nowrap}
+  .card dd{margin:0}
+  .card .cond{font-size:.86rem;color:var(--ink2);border-top:1px dashed var(--line);padding-top:8px;margin-top:auto}
+  .card[hidden]{display:none}
+  .noresult{padding:22px;text-align:center;color:var(--ink2);border:1px dashed var(--line)}
+
+  /* ---------- tables (desktop) / stacked (mobile) ---------- */
+  .tblwrap{overflow-x:visible}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;background:var(--surface)}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--surface2);font-weight:900}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  @media (max-width:720px){
+    table,thead,tbody,tr,td{display:block;width:100%}
+    thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+    tr{border:1px solid var(--line);margin-bottom:12px;background:var(--surface)}
+    td{border:none;border-top:1px solid var(--line);display:grid;grid-template-columns:7.5em 1fr;gap:10px;overflow-wrap:anywhere}
+    td:first-child{border-top:none}
+    td::before{content:attr(data-h);font-weight:900;color:var(--ink2);font-size:.82rem;padding-top:2px}
+    td.num{text-align:left}
+    td.plain{display:block}
+    td.plain::before{display:block;margin-bottom:4px}
+  }
+
+  /* ---------- chart ---------- */
+  .chartbox{background:var(--surface);border:1px solid var(--line);padding:18px 18px 8px;margin:18px 0}
+  .chartbox h3{margin:0 0 4px;font-size:1rem}
+  .chartbox svg{width:100%;height:auto;display:block}
+  .chartbox figcaption{font-size:.82rem;color:var(--ink2);padding:6px 0 10px}
+
+  /* ---------- five layers ---------- */
+  .layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0 6px}
+  .layer{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--teal);padding:12px 14px}
+  .layer .n{font-family:"IBM Plex Mono",monospace;color:var(--teal);font-weight:600;font-size:.8rem}
+  .layer h4{margin:2px 0 4px;font-size:.98rem}
+  .layer p{font-size:.85rem;color:var(--ink2);margin:0}
+
+  .checklist{list-style:none;padding:0;margin:0;counter-reset:ck}
+  .checklist li{background:var(--surface);border:1px solid var(--line);padding:14px 16px 14px 52px;position:relative;margin-bottom:10px;font-size:.94rem}
+  .checklist li::before{counter-increment:ck;content:counter(ck);position:absolute;left:14px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--teal);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+  @media (prefers-color-scheme: dark){.checklist li::before{color:#0d1512}}
+  .checklist b{display:block;margin-bottom:2px}
+
+  .usecases{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .usecase{background:var(--surface2);padding:14px 16px}
+  .usecase h4{margin:0 0 4px;font-size:.98rem}
+  .usecase p{margin:0;font-size:.9rem;color:var(--ink2)}
+  .usecase p b{color:var(--ink)}
+
+  footer{border-top:1px solid var(--line);margin-top:44px;padding:22px 0 0;font-size:.85rem;color:var(--ink2)}
+  footer h2{font-size:.95rem;color:var(--ink);margin:0 0 8px}
+  footer ul{margin:0 0 14px;padding-left:1.2em}
+  :focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <p class="dateline">調査日：2026年11月14日（JST）／ 数値は出典の種別（ベンダー自己申告か、第三者・リーダーボード測定か）を区別して記載</p>
+    <h1>TTSモデル解説と<br />商用利用ガイド</h1>
+    <p class="lede">音声合成（Text-to-Speech）の方式の系譜から、2024〜2026年の代表モデル、評価の読み方、オンデバイス化、そして「商用で使えるかどうか」の判定までを一枚に整理した。2024〜2026年の実務上の分岐は、性能よりも<strong>ライセンスと運用形態</strong>にある。</p>
+    <div class="keybox">
+      <h2>まず結論 ― 商用で「交渉なしに使える」もの</h2>
+      <ul>
+        <li><strong>オープンウェイト：</strong>Kokoro-82M、Qwen3-TTS、CosyVoice、Chatterbox、ZONOS3-Mini、Inflect v3 は重みまで Apache-2.0／MIT でクリーン。GPT-SoVITS は依存モデルの個別確認が前提。</li>
+        <li><strong>人気でも商用不可の代表例：</strong>F5-TTS（重み CC-BY-NC）と Fish Speech 系（旧系 CC-BY-NC-SA、S2-Pro は Research License）。「人気＝商用可」ではない。</li>
+        <li><strong>商用API：</strong> ElevenLabs は有料プランのみ商用可（無料期間の出力は後から有料化しても遡及しない）。OpenAI API・Google Cloud TTS は商用可。Azure は有料ティアのみが商用グラントの対象。</li>
+        <li><strong>日本語サービス：</strong>エンジンの規約と「声（キャラクター）ごとの規約」は二重構造。エンジンが商用可でも、選んだ声が不可なら不可。</li>
+        <li><strong>声クローン：</strong>モデルのライセンスが可でも、他人の声を再現する権利は含まれない。本人の明示的・書面の同意が別途必要。</li>
+      </ul>
+      <p class="warnline">※ 本ページは技術解説であり、ライセンス解釈は法的助言ではありません。商用判断では、公開直前に各リンク先・リポジトリの条文原文を必ず再確認してください。</p>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#history">1. 方式の系譜</a>
+    <a href="#models">2. 現行モデル</a>
+    <a href="#commercial">3. 商用利用ガイド</a>
+    <a href="#evaluation">4. 評価方法</a>
+    <a href="#ondevice">5. オンデバイス</a>
+    <a href="#selection">6. 用途別の選び方</a>
+  </nav>
+
+  <!-- ============ 1. 系譜 ============ -->
+  <section id="history">
+    <h2><span class="no">01</span>方式の系譜 ― 何を解決し、何が残ったか</h2>
+    <p class="intro">パイプラインの基本形は今も変わらない：<strong>テキスト正規化 → G2P（文字→音素）→ 音響モデル（音素→音響特徴）→ ボコーダ（音響特徴→波形）</strong>。各世代は「このどこを学習対象にし、どこを消したか」で理解できる。TTSの歴史は、手作業の排除と生成の確率モデル化の歴史である。</p>
+    <ol class="tl">
+      <li>
+        <span class="gen">ルール／フォルマント<span class="rep">代表：Klatt 等</span></span>
+        <p>声道の共鳴を規則で合成。<span class="solved">解決：</span>録音なしで任意の文が読めるようになった。<span class="left">残った課題：</span>機械的な音質、規則の手作業が膨大。</p>
+      </li>
+      <li>
+        <span class="gen">連結合成（concatenative）<span class="rep">代表：1990年代の商用TTS</span></span>
+        <p>録音済みの音素／音節片を接続・加工する。<span class="solved">解決：</span>実音声なので音質自体は自然。<span class="left">残った課題：</span>接続部の不連続、話者・感情の追加は再録音が必要、辞書外に弱い。</p>
+      </li>
+      <li>
+        <span class="gen">統計的パラメトリック（SPSS）<span class="rep">代表：HMM-TTS（HTS）、Zen et al. 2009</span></span>
+        <p>音響特徴の分布を HMM で学習し、パラメータから生成。<span class="solved">解決：</span>小データで一般化でき、話者適応も可能に。<span class="left">残った課題：</span>過平滑化で「こもった」音になり、自然さの天井が低い。</p>
+      </li>
+      <li>
+        <span class="gen">ニューラル波形生成<span class="rep">代表：WaveNet（2016）</span></span>
+        <p>波形サンプルを自己回帰で予測（dilated CNN）。<span class="solved">解決：</span>波形レベルの自然さが跳ね上がった。<span class="left">残った課題：</span>サンプル単位の逐次生成で極端に遅い。テキスト条件付けは別途必要。</p>
+      </li>
+      <li>
+        <span class="gen">高速ボコーダ<span class="rep">代表：WaveGlow、HiFi-GAN、iSTFTNet</span></span>
+        <p>メルスペクトログラム→波形を GAN／flow／iSTFT で並列生成。<span class="solved">解決：</span>WaveNet ボコーダの速度問題を解消。現在も多くのモデルの最終段を担う。<span class="left">残った課題：</span>ボコーダ単体では韻律（抑揚）は決まらない。</p>
+      </li>
+      <li>
+        <span class="gen">エンドツーエンド（seq2seq）<span class="rep">代表：Tacotron（2017）／Tacotron 2（2018）</span></span>
+        <p>文字→メルスペクトログラムをアテンション付き seq2seq で学習し、WaveNet／HiFi-GAN で波形化。「text→mel→wave」が標準形になった。<span class="solved">解決：</span>特徴量設計の手作業を排除し、自然さが実用水準へ。<span class="left">残った課題：</span>アテンション崩壊による<strong>読み飛ばし・繰り返し</strong>、自己回帰で遅い、長文に弱い。</p>
+      </li>
+      <li>
+        <span class="gen">非自己回帰（non-AR）<span class="rep">代表：FastSpeech（2019）／FastSpeech 2</span></span>
+        <p>音素の継続長（duration）を明示的に予測し length regulator で展開、並列生成。2 では pitch／energy も予測。<span class="solved">解決：</span>並列化で高速・頑健になり、速度／高さの制御も可能に。<span class="left">残った課題：</span>duration の教師は Tacotron 等からの蒸留に依存（2 で緩和）、表現力は中間特徴の設計次第。</p>
+      </li>
+      <li>
+        <span class="gen">flow／VAE 統合<span class="rep">代表：Glow-TTS、VITS（2021）</span></span>
+        <p>VAE＋normalizing flow＋敵対的学習＋確率的 duration で、テキスト→波形を単一モデルで学習。<span class="solved">解決：</span>音響モデルとボコーダの段差（カスケード誤差）を消した。高品質・高速で、Piper／VOICEVOX 系／Style-Bert-VITS2 の基盤になった。<span class="left">残った課題：</span>学習の不安定さ、話者は基本固定（追加学習が必要）。</p>
+      </li>
+      <li>
+        <span class="gen">音声コーデック＋言語モデル<span class="rep">代表：VALL-E（2023）、VALL-E 2、XTTS、Orpheus、Sesame CSM、Qwen3-TTS、Fish S2</span></span>
+        <p>EnCodec／SoundStream 系の RVQ コーデックで音声を離散トークン化し、LLM のように次トークンを予測。第1コードブックを AR、残りを non-AR で埋める構成が原型。<span class="solved">解決：</span><strong>3秒の参照音声でゼロショット声クローン</strong>（in-context learning）。大規模化（VALL-E は LibriLight 60,000時間）が効く。<span class="left">残った課題：</span>逐次生成で遅延・コスト大、繰り返し／無限ループ、ハルシネーション（言っていないことを言う／読み飛ばす）、コーデックの音質天井。</p>
+      </li>
+      <li>
+        <span class="gen">拡散／Flow Matching<span class="rep">代表：Grad-TTS、Matcha-TTS、F5-TTS（DiT＋flow matching）、E2-TTS、CosyVoice の flow 段、VoiceBox</span></span>
+        <p>ノイズからメル／潜在表現を反復的に生成（拡散）、または直線軌道で輸送する（flow matching／ODE）。<span class="solved">解決：</span>並列生成と高い多様性・自然さの両立。音素アライメント不要な設計も可能（F5 は参照音声＋文字の in-filling 形式）。<span class="left">残った課題：</span>反復ステップ数と速度のトレードオフ（蒸留で緩和）、ストリーミングは工夫が必要（CosyVoice 2 以降は causal flow matching で対応）。</p>
+      </li>
+      <li>
+        <span class="gen">Speech-to-Speech／Full-duplex<span class="rep">代表：Moshi（Kyutai, 2024）、GPT-4o Realtime／gpt-realtime、Gemini Live、Sesame CSM、NVIDIA PersonaPlex（2026）</span></span>
+        <p>ASR→LLM→TTS のカスケードをやめ、音声トークンを入出力する単一モデルが「聞きながら話す」。Moshi は Mimi コーデック（12.5Hz）＋「inner monologue」テキスト流を持つ。<span class="solved">解決：</span>相槌・割り込み・笑い等のパラ言語情報がテキスト経由で落ちない。遅延は理論 160ms／実測約 200ms（L4、<strong>Kyutai 自己申告</strong>）。<span class="left">残った課題：</span>言語・知識能力はテキスト LLM に劣りがち、評価方法が未成熟、日本語対応は商用 API 先行。TTS 単体用途には過剰。</p>
+      </li>
+    </ol>
+    <div class="note"><b>留保：</b>これらの世代は排他的ではなく重なっている。現行製品の多くは混成である（例：CosyVoice＝LLM＋flow matching、Qwen3-TTS＝コーデックLM＋軽量デコーダ、Kokoro＝StyleTTS 2 系＋iSTFTNet）。そして全世代を通じて「読みの正確さ（特に日本語）」「長文一貫性」「声の権利」が最後まで残った。</div>
+  </section>
+
+  <!-- ============ 2. 現行モデル ============ -->
+  <section id="models">
+    <h2><span class="no">02</span>代表的な現行モデル（2024〜2026年）</h2>
+    <p class="intro">数値はモデルカード／公式リポジトリ記載＝<strong>ベンダー自己申告</strong>が基本。判定バッジは商用利用の可否（◎＝重み／出力まで商用可、△＝条件付き、×＝公開ライセンスでは商用不可、？＝条文が矛盾・未確認）。ボタンで絞り込める。</p>
+
+    <div class="filters" role="group" aria-label="商用判定で絞り込む">
+      <button type="button" data-f="all" aria-pressed="true">すべて</button>
+      <button type="button" data-f="ok" aria-pressed="false">◎ 商用可</button>
+      <button type="button" data-f="cond" aria-pressed="false">△ 条件付き</button>
+      <button type="button" data-f="ng" aria-pressed="false">× 商用不可</button>
+      <button type="button" data-f="jp" aria-pressed="false">日本語に強い</button>
+    </div>
+
+    <div class="grid" id="modelGrid">
+      <article class="card" data-cat="ok">
+        <div class="row"><h3>Kokoro-82M<span class="org">hexgrad ／ v1.0（2025-01-27）</span></h3><span class="badge b-ok">◎ 商用可</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>82M ／ StyleTTS 2＋iSTFTNet、non-AR</dd>
+          <dt>言語</dt><dd>8言語・54声。日本語の声は少数（jf_alpha 等）で、品質は英語が主</dd>
+          <dt>声クローン</dt><dd>なし（固定声）</dd>
+          <dt>速度</dt><dd>CPU 動作可。ONNX 版が主流</dd>
+          <dt>ライセンス</dt><dd>重み Apache-2.0</dd>
+        </dl>
+        <p class="cond">出典：Hugging Face モデルカード（Apache-2.0、商用 API でのデプロイ実績への言及あり）。依存する eSpeak-NG は GPL 系のため、組み込み形態は別途確認。</p>
+      </article>
+
+      <article class="card" data-cat="ok jp">
+        <div class="row"><h3>Qwen3-TTS<span class="org">Alibaba Qwen ／ 2026-01-22</span></h3><span class="badge b-ok">◎ 商用可</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>0.6B／1.7B、12Hz トークナイザ ／ Dual-Track コーデックLM</dd>
+          <dt>言語</dt><dd>10言語（中・英・<strong>日</strong>・韓・独・仏・露・葡・西・伊）。CustomVoice に日本語話者 Ono_Anna</dd>
+          <dt>声クローン</dt><dd>Base は<strong>3秒</strong>クローン。VoiceDesign は文章で声を設計</dd>
+          <dt>速度</dt><dd>初音 <span class="mono">97ms（0.6B）／101ms（1.7B）</span>、RTF 約0.29〜0.31（公式技術報告、単一並行時＝自己申告）</dd>
+          <dt>ライセンス</dt><dd>コード・重みとも Apache-2.0</dd>
+        </dl>
+        <p class="cond">出典：公式リポジトリ・各モデルカード。並行数が増えると初音は劣化する（公式表では並行1→6で 97→299ms 等）。</p>
+      </article>
+
+      <article class="card" data-cat="ok jp">
+        <div class="row"><h3>CosyVoice 2／Fun-CosyVoice 3<span class="org">Alibaba FunAudioLLM → QwenAudio</span></h3><span class="badge b-ok">◎ 商用可</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>0.5B ／ LLM＋（causal）flow matching、FSQ</dd>
+          <dt>言語</dt><dd>2：中・英・日・韓等 ／ 3：9言語＋中国語方言18種。日本語は対応言語内だが主戦場は中国語</dd>
+          <dt>声クローン</dt><dd><strong>3秒</strong>ゼロショット、跨言語可</dd>
+          <dt>速度</dt><dd>双方向ストリーミング初パケット<strong>約150ms</strong>（公式）</dd>
+          <dt>ライセンス</dt><dd>コード・重みとも Apache-2.0</dd>
+        </dl>
+        <p class="cond">注意：リポジトリ記載のデモコンテンツは「academic purposes only」とされており、素材とモデルを混同しないこと。参照音声の権利は利用者責任で、同意・透かしの仕組みは付いていない。</p>
+      </article>
+
+      <article class="card" data-cat="ng">
+        <div class="row"><h3>F5-TTS<span class="org">SWivid ／ v1 Base（2025-03）</span></h3><span class="badge b-ng">× 商用不可</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>約337M ／ DiT＋flow matching、non-AR</dd>
+          <dt>言語</dt><dd>公式は英・中。日本語はコミュニティ微調整頼み</dd>
+          <dt>声クローン</dt><dd>参照音声＋書き起こしで可</dd>
+          <dt>速度</dt><dd>RTF 約0.15（公式、GPU）</dd>
+          <dt>ライセンス</dt><dd>コード MIT ／ <strong>重み CC-BY-NC</strong></dd>
+        </dl>
+        <p class="cond">公式 README 明記：「コードは MIT、事前学習モデルは学習データ Emilia のため CC-BY-NC」。公式重みで作った音声の商用利用は不可。商用化は、権利クリーンなデータで自前学習した重みを使う道のみ。</p>
+      </article>
+
+      <article class="card" data-cat="ng">
+        <div class="row"><h3>Fish Speech 1.5／S2-Pro<span class="org">Fish Audio ／ S2 は 2026-03</span></h3><span class="badge b-ng">× 商用は別契約</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>1.5系 0.5B ／ S2-Pro 約4B＋0.4B dual-AR（Qwen3-4B 基盤）、RVQ 10 codebook</dd>
+          <dt>言語</dt><dd>S2 は80+言語、日本語は tier 1 とされる</dd>
+          <dt>声クローン</dt><dd>10〜30秒の参照音声</dd>
+          <dt>速度</dt><dd>S2：RTF <span class="mono">0.195</span>、初音 &lt;100ms（<strong>H200、技術報告＝自己申告</strong>）。推論 VRAM 24GB（公式 docs）</dd>
+          <dt>ライセンス</dt><dd>旧系 CC-BY-NC-SA ／ S2-Pro は Research License</dd>
+        </dl>
+        <p class="cond">S2-Pro は研究・非商用は無料、商用は別途書面ライセンス（改変・派生物の商用も同条件）。ホスト版 API は別契約体系（第3章）。</p>
+      </article>
+
+      <article class="card" data-cat="ok">
+        <div class="row"><h3>Chatterbox<span class="org">Resemble AI</span></h3><span class="badge b-ok">◎ 商用可（運用リスク△）</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>Original／Multilingual V3 500M、Turbo 350M、Nano 110M ／ Llama 基盤＋蒸留デコーダ</dd>
+          <dt>言語</dt><dd>Multilingual V3 で23言語（日本語含む）。Turbo／Nano は英語</dd>
+          <dt>声クローン</dt><dd>5〜10秒の参照音声</dd>
+          <dt>速度</dt><dd>Turbo は低遅延を謳い、Nano は 8 CPU コアで実時間×3（公式）</dd>
+          <dt>ライセンス</dt><dd>コード・重みとも MIT</dd>
+        </dl>
+        <p class="cond">全出力に Resemble PerTh の不可聴透かしが入る。<strong>2026-08 に開発終了（retired research）</strong>となりサポート・修正なし。凍結アーカイブとして使う判断が必要。</p>
+      </article>
+
+      <article class="card" data-cat="ok">
+        <div class="row"><h3>ZONOS3-Mini<span class="org">Zyphra ／ 2026-11-09</span></h3><span class="badge b-ok">◎ 商用可</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>MoE 総800M／活性100M（カード表記886M 説もあり<strong>要確認</strong>）／ MoE コーデック系</dd>
+          <dt>言語</dt><dd>43言語とされる（自己申告）</dd>
+          <dt>声クローン</dt><dd>ゼロショット可</dd>
+          <dt>速度</dt><dd>ブラウザ WebGPU で初音 &lt;570ms（Pixel 9）、H100 で 80ms（<strong>いずれも Zyphra 自己申告</strong>、自社 ZTTS2-Eval）</dd>
+          <dt>ライセンス</dt><dd>重み Apache-2.0、ランタイム MIT</dd>
+        </dl>
+        <p class="cond">SaaS 組み込みもライセンス交渉不要と位置づけられる。クローン声の同意・透かし等のコンプライアンスは利用者側の実装事項。</p>
+      </article>
+
+      <article class="card" data-cat="ok">
+        <div class="row"><h3>Inflect v3<span class="org">owenawsong</span></h3><span class="badge b-ok">◎ 商用可</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>Mini 34.31M／Micro 11.79M／Atom 157K（合成コアのみ）／ 軽量ローカル TTS</dd>
+          <dt>言語</dt><dd>英語中心（日本語は未確認）</dd>
+          <dt>声クローン</dt><dd>なし系</dd>
+          <dt>速度</dt><dd>CPU／GPU ローカル</dd>
+          <dt>ライセンス</dt><dd>コード・重みとも Apache-2.0</dd>
+        </dl>
+        <p class="cond">作者告知：「All weights and inference code under Apache 2.0.」フロントエンド等の第三者部品は個別ライセンス。</p>
+      </article>
+
+      <article class="card" data-cat="cond jp">
+        <div class="row"><h3>Style-Bert-VITS2<span class="org">litagin02</span></h3><span class="badge b-cond">△ 声モデルは個別</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>VITS 系＋日本語 BERT によるスタイル制御</dd>
+          <dt>言語</dt><dd><strong>日本語特化</strong>。JP-Extra が本命。感情スライダ可</dd>
+          <dt>声クローン</dt><dd>自前データで学習（数分〜）</dd>
+          <dt>速度</dt><dd>推論は CPU 可、学習は GPU</dd>
+          <dt>ライセンス</dt><dd>コード <strong>AGPL-3.0</strong>、モデルは個別</dd>
+        </dl>
+        <p class="cond">コードは商用可だが AGPL のため、ネットワーク越し提供（SaaS）ではソース開示義務が生じうる。同梱の JVNV 由来モデルは CC BY-SA 4.0（継承・表示）、配布モデルはクレジット表記等の個別規約。つまり「本体◎、声モデルは1件ずつ確認」。</p>
+      </article>
+
+      <article class="card" data-cat="cond jp">
+        <div class="row"><h3>GPT-SoVITS<span class="org">RVC-Boss</span></h3><span class="badge b-cond">△ 条件付き商用可</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>GPT＋SoVITS ／ few-shot クローン</dd>
+          <dt>言語</dt><dd>中・英・<strong>日</strong>・韓・粤語</dd>
+          <dt>声クローン</dt><dd><strong>5秒</strong>ゼロショット／<strong>1分</strong>微調整</dd>
+          <dt>速度</dt><dd>RTF 0.028（4060 Ti）等は README 自己申告</dd>
+          <dt>ライセンス</dt><dd>本体 MIT（中核の事前学習モデル含む）</dd>
+        </dl>
+        <p class="cond">追加で使う UVR5・ASR 等の第三者モデル／依存ファイルは個別ライセンス。自分で学習させる声の権利は当然別。リポジトリ内の base model ファイル単位の確認が推奨される。</p>
+      </article>
+
+      <article class="card" data-cat="ng">
+        <div class="row"><h3>VibeVoice<span class="org">Microsoft</span></h3><span class="badge b-q">？ 実務上 ×寄り</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>1.5B（カード表記3B）／Realtime 0.5B ／ next-token diffusion</dd>
+          <dt>言語</dt><dd>英・中のみ（Realtime は他言語実験的）。<strong>日本語は対象外と見るべき</strong></dd>
+          <dt>声クローン</dt><dd>話者プロンプト</dd>
+          <dt>速度</dt><dd>Realtime 初音約300ms。90分・4話者一括生成が特徴</dd>
+          <dt>ライセンス</dt><dd>コード・重みとも MIT（文面上）</dd>
+        </dl>
+        <p class="cond">ただしモデルカードが「limited to research purpose」「do not recommend using VibeVoice in commercial or real-world applications」と明記するグレー領域。全出力に可聴の AI 生成ディスクレーマ＋透かし。Microsoft は2025-09 に TTS 推論コードをリポジトリから削除した。書面確認なしに商用製品へ採用するのは推奨できない。</p>
+      </article>
+
+      <article class="card" data-cat="ng">
+        <div class="row"><h3>Underdog Woof<span class="org">Conway／Underdog ／ 2026-11</span></h3><span class="badge b-ng">× 商用は別途許諾</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>1声 30.7M／31.7MB、2声 38.2M／40.6MB ／ 小型、numpy 参照実装のみ（ONNX なし）</dd>
+          <dt>言語</dt><dd>英語、2声のみ</dd>
+          <dt>声クローン</dt><dd>なし</dd>
+          <dt>速度</dt><dd>ブラウザ WebGPU 動作（移植は第三者 TTSLab）</dd>
+          <dt>ライセンス</dt><dd>Underdog Non-Commercial License 1.0</dd>
+        </dl>
+        <p class="cond">HF リポジトリのライセンスファイルは独自 NC 1.0、公式ランディングは CC BY-NC 4.0 と表記し、<strong>両文書が食い違う</strong>（TTSLab が指摘。厳しい方で読むべき）。非商用はクレジット「Voice by Underdog Woof」付きで可、商用は Underdog との取り決めが必要。Woof およびその出力で他モデルを学習・蒸留することは禁止。</p>
+      </article>
+
+      <article class="card" data-cat="cond jp">
+        <div class="row"><h3>VOICEVOX／AivisSpeech<span class="org">日本語特化エンジン</span></h3><span class="badge b-cond">△ エンジンと声で分裂</span></div>
+        <dl>
+          <dt>規模・方式</dt><dd>VITS 系エンジン＋個別の声モデル</dd>
+          <dt>言語</dt><dd>日本語のみ</dd>
+          <dt>声クローン</dt><dd>原則なし（声は配布モデル）</dd>
+          <dt>速度</dt><dd>CPU で実時間級、localhost API（VOICEVOX 50021／AivisSpeech 10101）</dd>
+          <dt>ライセンス</dt><dd>エンジンと<strong>声ごとに分裂</strong>（詳細は第3章 3-4）</dd>
+        </dl>
+        <p class="cond">日本語の自然さ・アクセントでは、多言語モデルの「日本語対応」とは別物として評価すべき存在。</p>
+      </article>
+    </div>
+    <p class="noresult" id="noResult" hidden>該当するモデルがありません。</p>
+
+    <h3 class="sub">その他の小型モデル（参考）</h3>
+    <p>
+      <span class="tag">Piper（VITS、声ごと16〜113MB）</span><span class="tag">KittenTTS（15M／約24MB〜）</span><span class="tag">Pocket TTS（Kyutai 100M、CPUクローン、初音約200ms＝自己申告）</span><span class="tag">Supertonic 3（Supertone 99M、31言語、ONNX）</span><span class="tag">Phonon（Gradium 31M／約65MB）</span>
+    </p>
+    <p class="small">ライセンス：Piper 後継は GPL-3.0（旧 MIT と混在）、Kitten は Apache-2.0、Pocket はコード MIT／重み CC-BY 4.0、Phonon は 31M が Apache-2.0／40M が CC-BY-NC。Supertonic 3 の重みは OpenRAIL-M 説と Apache 説が混在し<strong>要原文確認</strong>。現時点で Supertonic／Phonon に日本語はない（Phonon は「日本語は学習可能」と案内）。XTTS-v2 は Coqui Public Model License で非商用制限で知られるが、採用時は原文確認が必須。</p>
+  </section>
+
+  <!-- ============ 3. 商用利用 ============ -->
+  <section id="commercial">
+    <h2><span class="no">03</span>商用利用ガイド ― 可否は「5層」で決まる</h2>
+    <p class="intro">「商用可」は原則として「そのライセンス／プランの範囲で、生成音声を収益目的の製品・コンテンツに使える」ことを指す。再配布・ホスティング（第三者がテキストを入力する SaaS 型提供）・モデル学習への利用は、別条件になることが多い。判定は次の5層を分けて確認する。</p>
+
+    <div class="layers">
+      <div class="layer"><span class="n">LAYER 1</span><h4>コード</h4><p>MIT／Apache-2.0／AGPL 等、プログラム自体のライセンス。</p></div>
+      <div class="layer"><span class="n">LAYER 2</span><h4>重み</h4><p>学習済みモデルのライセンス。コードと違うことが<strong>最頻の事故原因</strong>（F5-TTS、Fish、VibeVoice）。</p></div>
+      <div class="layer"><span class="n">LAYER 3</span><h4>学習データ</h4><p>Emilia 等の NC 条件が重みに伝播する。</p></div>
+      <div class="layer"><span class="n">LAYER 4</span><h4>声そのものの権利</h4><p>参照音声・プリセット声・キャラクターの規約、話者の同意。</p></div>
+      <div class="layer"><span class="n">LAYER 5</span><h4>出力音声</h4><p>API のプラン別権利、透かし、クレジット表記、解約後の継続可否。</p></div>
+    </div>
+
+    <h3 class="sub">3-1. オープンウェイトの判定まとめ</h3>
+    <p>第2章のカードと対応する一覧。<strong>商用プロダクトで「交渉なしに使える」のは Kokoro、Qwen3-TTS、CosyVoice、Chatterbox、ZONOS3-Mini、Inflect v3、GPT-SoVITS（依存確認前提）。</strong>Fish Audio Drama 3／fish-speech コードは Fish Audio Community License 1.0 で、年間総収益（関連会社含む）<strong>50万 USD 未満</strong>の間だけ商用ライセンスが無料で付くが、第三者が入力するホスティング型 TTS／クローンサービスは収益額にかかわらず常に別ライセンス（「Built with Fish Audio」表示等の条項あり）。</p>
+
+    <h3 class="sub">3-2. 商用API ― 生成音声の権利と料金</h3>
+
+    <figure class="chartbox">
+      <h3>API料金の比較（100万字あたり、USD）</h3>
+      <svg viewBox="0 0 720 308" role="img" aria-label="棒グラフ：Google Standard 4ドル、OpenAI tts-1 15ドル、Azure Neural 15ドル、Google Neural2 16ドル、Azure Neural HD 22ドル、Google Chirp 3 HD 30ドル、OpenAI tts-1-hd 30ドル、ElevenLabs実質50から100ドル級、Google Studio 160ドル">
+        <g font-family="Noto Sans JP, sans-serif" font-size="12.5">
+          <!-- rows: y step 32, bar max width 330 for 160 -->
+          <text x="0" y="20" fill="var(--ink)">Google Standard／WaveNet</text><rect x="252" y="8" width="8" height="15" fill="var(--chart)"/><text x="266" y="20" class="mono" fill="var(--ink)">$4</text>
+          <text x="0" y="52" fill="var(--ink)">OpenAI tts-1</text><rect x="252" y="40" width="31" height="15" fill="var(--chart)"/><text x="289" y="52" class="mono" fill="var(--ink)">$15</text>
+          <text x="0" y="84" fill="var(--ink)">Azure Neural</text><rect x="252" y="72" width="31" height="15" fill="var(--chart)"/><text x="289" y="84" class="mono" fill="var(--ink)">$15</text>
+          <text x="0" y="116" fill="var(--ink)">Google Neural2</text><rect x="252" y="104" width="33" height="15" fill="var(--chart)"/><text x="291" y="116" class="mono" fill="var(--ink)">$16</text>
+          <text x="0" y="148" fill="var(--ink)">Azure Neural HD</text><rect x="252" y="136" width="45" height="15" fill="var(--chart)"/><text x="303" y="148" class="mono" fill="var(--ink)">$22</text>
+          <text x="0" y="180" fill="var(--ink)">Google Chirp 3 HD</text><rect x="252" y="168" width="62" height="15" fill="var(--chart)"/><text x="320" y="180" class="mono" fill="var(--ink)">$30</text>
+          <text x="0" y="212" fill="var(--ink)">OpenAI tts-1-hd</text><rect x="252" y="200" width="62" height="15" fill="var(--chart)"/><text x="320" y="212" class="mono" fill="var(--ink)">$30</text>
+          <text x="0" y="244" fill="var(--ink)">ElevenLabs（実質・換算）</text><rect x="252" y="232" width="103" height="15" fill="var(--chart2)"/><rect x="321" y="232" width="103" height="15" fill="var(--chart2)" opacity="0.35"/><text x="464" y="244" class="mono" fill="var(--ink)">$50〜100級</text>
+          <text x="0" y="276" fill="var(--ink)">Google Studio</text><rect x="252" y="264" width="330" height="15" fill="var(--chart)"/><text x="588" y="276" class="mono" fill="var(--ink)">$160</text>
+        </g>
+      </svg>
+      <figcaption>2026年11月時点、公式／公式転記による従量単価。ElevenLabs はクレジット制プランからの換算で幅がある。自前 GPU 運用（Qwen3-TTS 等）は文字単価ゼロだが、GPU 時間・運用工数がコストになる。目安：Google Standard $4 が最安層、OpenAI／Azure／Google Neural が $15〜16、ElevenLabs は品質・表現料の位置づけ。</figcaption>
+    </figure>
+
+    <div class="tblwrap">
+    <table>
+      <thead><tr><th>サービス</th><th>商用利用権</th><th>料金体系（2026-11確認）</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr>
+          <td data-h="サービス"><strong>ElevenLabs</strong><br /><span class="small">Eleven v3／v4、Flash v2.5（初音約75ms＝自己申告）。表現・クローンの品質基準。70+言語</span></td>
+          <td data-h="商用利用権"><span class="badge b-cond">△ 有料プランのみ</span><br />Free は非商用のみ。<strong>有料期間中に生成した出力の商用権は解約後も存続</strong>するが、無料期間の出力を後から有料化しても<strong>遡及しない</strong>（再生成が必要）。出力の権利は利用者に残る（規約§4系統）</td>
+          <td data-h="料金体系">クレジット制（概ね1クレジット／文字、Flash／Turbo は半額系）。Free 10k（商用不可・要帰属表示）、<strong>Starter $6/月 30k（商用ライセンス＋Instant Clone）</strong>、Creator $22/月 121k（Professional Clone）、Pro $99/月、Scale $299/月。API 単価はモデルにより $0.05〜0.10／1k字程度</td>
+          <td data-h="注意点">ベータ機能は商用対象外とされる場合あり。Voice Library の声は別付属規約</td>
+        </tr>
+        <tr>
+          <td data-h="サービス"><strong>OpenAI API</strong><br /><span class="small">tts-1／tts-1-hd、gpt-4o-mini-tts、gpt-realtime 系。指示文で話し方を操る。50+言語とされるが検証は英語中心</span></td>
+          <td data-h="商用利用権"><span class="badge b-ok">◎ 商用可</span><br />Services Agreement で「Customer owns all Output」、自らの権利・権原・利益を顧客に譲渡。ただし <strong>ChatGPT Voice の出力は非商用</strong>という区別があり、API 出力とは別扱い</td>
+          <td data-h="料金体系">tts-1 <strong>$15／100万字</strong>、tts-1-hd $30／100万字。gpt-4o-mini-tts はトークン課金（入力 $0.60／100万トークン＋音声出力 $12／100万トークン）。無料枠なし</td>
+          <td data-h="注意点">エンドユーザーへ AI 生成音声であることの<strong>明確な開示</strong>が必要。カスタム音声（クローン）は営業経由・同意録音が前提で、補足契約は非公開</td>
+        </tr>
+        <tr>
+          <td data-h="サービス"><strong>Google Cloud TTS</strong>（Gemini TTS 含む）<br /><span class="small">WaveNet、Neural2、Chirp 3 HD、Studio、Gemini Flash TTS。最も安く無料枠が大きい開発者向け基盤。SSML 充実</span></td>
+          <td data-h="商用利用権"><span class="badge b-ok">◎ 商用可</span><br />無料枠・有料の区別なく同一の Cloud 契約で扱われ、生成出力は顧客データで顧客が IP を保持。無断で顧客データで学習しないとされる</td>
+          <td data-h="料金体系">Standard／WaveNet <strong>$4／100万字（月4M字無料）</strong>、Neural2 $16（月1M字無料）、Chirp 3 HD $30（月1M字無料）、Studio $160。Gemini 系 TTS はトークン課金の別体系</td>
+          <td data-h="注意点">無料枠も<strong>課金アカウント有効化が必須</strong>で、超過分は自動課金（止まらない）。Instant Custom Voice は営業許可制＋同意録音が必須</td>
+        </tr>
+        <tr>
+          <td data-h="サービス"><strong>Microsoft Azure Speech</strong><br /><span class="small">Neural／Neural HD、DragonHD。企業向けコンプライアンス・大規模運用</span></td>
+          <td data-h="商用利用権"><span class="badge b-cond">△ 有料ティアのみ</span><br />Product Terms 上、プリビルト神経音声出力の商用グラントは「paid tier TTS Service only」とされ、<strong>F0 無料枠（月0.5M神経文字）の出力はその範囲外</strong>と読める</td>
+          <td data-h="料金体系">Neural <strong>$15／100万字</strong>、Neural HD $22／100万字。コミットメント階層で $6／100万字級まで低下。CJK 文字は2文字換算で課金</td>
+          <td data-h="注意点">無料枠で作った音声をそのまま商用公開するのは ElevenLabs 同様の落とし穴。エンタープライズ契約では条件が変わりうる</td>
+        </tr>
+        <tr>
+          <td data-h="サービス"><strong>Fish Audio（ホスト版）</strong><br /><span class="small">S2.1 Pro 等。オープン版とは別契約体系の API／Studio</span></td>
+          <td data-h="商用利用権"><span class="badge b-cond">△ 有料で商用可</span><br />Free は規約上「個人的・非商用」。有料の商用権は FAQ 上<strong>「verified voices（自分が所有する声）」に紐づく</strong>とされ、ユーザー投稿のライブラリ声の権利は保証されない</td>
+          <td data-h="料金体系">Studio：Plus $15/月 250kクレジット（約200分）、Pro $100/月 2M、Max $999/月 25M。API は別体系で <strong>$15／100万 UTF-8 バイト</strong></td>
+          <td data-h="注意点"><strong>日本語は1文字3バイト</strong>のため、文字単価換算では英語の約3倍になる。価格ページと規約で Free の商用表記に矛盾があるとの指摘もあり、規約側を正とすべき</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">このほか会話エージェント向け低遅延特化として Cartesia（Sonic 系）／Deepgram Aura（Aura-2）があるが、日本語対応は限定的。なお2026年後半はモデル世代交代が速く、OpenAI gpt-4o-mini-tts の廃止予定（2027-01-06）や Eleven v4、Gemini 3.8 Flash TTS 等の記述も検索結果に現れるが、<strong>廃止・後継の確定情報は各社公式ページで再確認が必要</strong>であり、ここでは断定しない。</p>
+
+    <h3 class="sub">3-3. 日本語サービス ― エンジンと「キャラクターの声」は別契約</h3>
+    <p>日本語サービスで最も重要なのは二重構造である。<strong>エンジンが商用可でも、選んだ声が不可なら不可</strong>である。</p>
+    <div class="tblwrap">
+    <table>
+      <thead><tr><th>サービス</th><th>エンジン／サービス側</th><th>声ごとの条件</th><th>商用・料金の要点</th></tr></thead>
+      <tbody>
+        <tr>
+          <td data-h="サービス"><strong>VOICEVOX</strong></td>
+          <td data-h="エンジン側">本体は商用・非商用を問わず利用可とされるが、生成音声使用時は<strong>「VOICEVOX:キャラクター名」クレジットが必須</strong>で、各音声ライブラリ規約への従属が規約に明記</td>
+          <td data-h="声ごとの条件"><strong>声ごとに全く違う</strong>。ずんだもん／四国めたん／九州そら等（東北ずん子・ずんだ餅プロジェクト）はクレジット記載で商用可。一方、もち子さんはゲーム作品の有償販売禁止、No.7 は同人利用の扱いが別、等</td>
+          <td data-h="商用・料金">無料。クレジット省略は権利者との有償契約（例：ずんだもん系で1キャラ40万円＋税という案内）。「VOICEVOX 自体の再配布禁止」、出力音声を素材として再販売する行為を禁じる声もある。使う声の権利者ページを公開直前に確認するのが実務</td>
+        </tr>
+        <tr>
+          <td data-h="サービス"><strong>AivisSpeech／AivisHub</strong></td>
+          <td data-h="エンジン側">エンジン本体は<strong>クレジット不要、個人・法人・商用・非商用を問わず利用可</strong>（公式 GitHub 説明）</td>
+          <td data-h="声ごとの条件">モデル側で決まる。AivisHub のモデルライセンスは <strong>ACML（商用制限なし・クレジット不要）／ACML-NC（非営利のみ）／CC0</strong> 等</td>
+          <td data-h="商用・料金">エンジン◎でも <strong>ACML-NC の声を選べば商用不可</strong>。Style-Bert-VITS2 モデルを AIVMX 形式で取り込む場合も、元のモデル規約が付いてくる</td>
+        </tr>
+        <tr>
+          <td data-h="サービス"><strong>CoeFont</strong></td>
+          <td data-h="エンジン側">プラン連動型。<strong>Free は規約第4条で非商用、第5条で「Voiced by https://CoeFont.cloud」表示必須</strong></td>
+          <td data-h="声ごとの条件">声優・著名人を含む1万超の声は CoeFont 側で権利処理されたライブラリとして提供（個別交渉不要なのが売り）</td>
+          <td data-h="商用・料金"><strong>Standard 以上で商用可</strong>：Standard 月額3,300円（初期6ヶ月、その後4,400円）／$20、8万字。Plus 55,000円／$350、100万字＋API（超過0.05円／字）。<strong>有料プランで DL した音声は解約後も商用利用可</strong>（FAQ）。クレジットは有料では任意</td>
+        </tr>
+        <tr>
+          <td data-h="サービス"><strong>AITalk／A.I.VOICE</strong>（エーアイ）</td>
+          <td data-h="エンジン側">法人向け AITalk と個人向け製品で体系が分かれる</td>
+          <td data-h="声ごとの条件">キャラクター製品（結月ゆかり等）はキャラクター側規約も重なる</td>
+          <td data-h="商用・料金">個人向け「かんたん！AITalk」は<strong>個人利用限定で業務・商用不可</strong>。A.I.VOICE シリーズは商用・法人利用可の製品だが、<strong>個人のスポンサー案件では個人商用ライセンス、法人利用では法人ライセンス</strong>が必要という段階制。法人向け「AITalk 声の職人」クラウド版は<strong>月額60,000円（税別）〜</strong>で、生成音声ファイルの商用配布・複製は別途費用が必要な場合がある</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">参考：音読さん等の Web 型には無料でも商用可とするサービスがある。無料プランはクレジット必須、用途で上位プラン必須という条件分岐が典型的（エーアイ公式解説が VOICEVOX と並べて注意喚起）。</p>
+
+    <h3 class="sub">3-4. 声クローン商用の権利チェックリスト</h3>
+    <p>モデルのライセンスが◎でも、<strong>他人の声を再現する権利はライセンスに含まれない</strong>。</p>
+    <ol class="checklist">
+      <li><b>本人の明示的・書面の同意を取る</b>目的（学習／生成／公開）、媒体、期間、地域、収益化の有無、撤回方法を特定する。「録音データの提供＝クローン同意」ではない。主要 API も同旨を規約化：ElevenLabs は生存する個人の声を「explicit and informed consent」なしにクローン・なりすましすることを禁止し、未成年（18歳未満）の録音による声モデル作成も禁止。Professional Voice Cloning は本人の声のみで、本人が検証（voice CAPTCHA）して共有する形のみ。OpenAI のカスタム音声は同意録音のアップロードが前提。Google の Instant Custom Voice は許可制＋同意文の録音が必須。</li>
+      <li><b>日本の権利構造を押さえる（声そのものを守る単独の法律はない）</b>著作権法：声そのものは対象外だが、録音された<strong>実演</strong>には著作隣接権があり、既存録音を無断で学習データに使うと侵害になりうる。パブリシティ権：最高裁ピンク・レディー事件（2012）の枠組みのもと、内閣府「AI時代の知的財産権検討会」中間とりまとめ（2024-05）は「肖像等」に声が含まれ<strong>声もパブリシティ権で保護可能</strong>と整理（法務省検討会の解釈指針も2026-08公表とされる方向で整理）。このほか「声をみだりに利用されない権利」（人格権的構成）や、声が周知・著名な商品等表示と結びつく場合の不正競争防止法の余地がある。日本俳優連合は2026-10に「音声に関する生成AI利用ガイドライン」を公表し、学習・生成・公開の<strong>全段階で実演家の事前許諾</strong>を求める立場を示した（法的拘束力はないが契約実務の参照点）。</li>
+      <li><b>なりすまし・詐欺・政治利用は別格</b>声紋認証の回避、本人が言っていない発言の生成、政治候補者のなりすまし（ElevenLabs は許諾があっても候補者・公職者のなりすましを禁止）、選挙攪乱、非同意の性的コンテンツは、同意書があっても許容されない用途がある。</li>
+      <li><b>故人の声は別途確認</b>死後のパブリシティ権は法域で扱いが異なり、遺族感情・各サービスの禁止条項（ElevenLabs は害を生じうる／死後権利を侵害する故人クローンを禁止）を確認する。</li>
+      <li><b>AI 生成であることの開示</b>OpenAI は TTS 利用ポリシーとして AI 音声の明確な開示を要求。EU AI 法の透明性義務、プラットフォーム（YouTube／TikTok）の AI ラベル規約、日本の広告表示規制等が重なりうる。透かし（Chatterbox PerTh、VibeVoice）を除去して使う設計は避ける。</li>
+      <li><b>契約書に残す</b>声優・ナレーターとの既存契約に AI 学習・AI 代替の可否条項があるか確認し、新規では「学習可否／生成物の利用範囲／対価／期間／撤回時の扱い」まで明記する。</li>
+    </ol>
+  </section>
+
+  <!-- ============ 4. 評価 ============ -->
+  <section id="evaluation">
+    <h2><span class="no">04</span>評価方法 ― 単一指標では決まらない</h2>
+    <p class="intro">MOS／Elo（好み）、WER/CER（言っている内容の正しさ）、話者類似度（SIM）、RTFx／初音遅延は分けて見る。2026年9月公開の Hugging Face Open TTS Leaderboard が、オープンウェイトについては最も再現性のある自動評価である。</p>
+    <div class="tblwrap">
+    <table>
+      <thead><tr><th>指標</th><th>何を見るか</th><th>落とし穴</th></tr></thead>
+      <tbody>
+        <tr><td data-h="指標"><strong>MOS</strong>（ITU-T P.800 系、1〜5）／CMOS／SMOS</td><td data-h="何を見るか">人間リスナーの自然さ／比較／話者類似</td><td data-h="落とし穴">相対評価であり、聴取集合が変わると同じ音声でも値が動く（例：同一音声が「quality」質問で3.53、「naturalness」で3.21という研究報告）。ベンダーページの MOS 同士は原則比較不能</td></tr>
+        <tr><td data-h="指標"><strong>Elo／選好（Arena 型）</strong></td><td data-h="何を見るか">2音声の盲検選好。TTS Arena、Artificial Analysis Provider Voice Leaderboard</td><td data-h="落とし穴">「好み」であって読みの正確さではない。短文・英語中心。Kokoro が TTS Arena v1 首位、Artificial Analysis では Eleven 系が上位、オープンでは Fish 系が高い等、<strong>ボードごとに順位は違う</strong></td></tr>
+        <tr><td data-h="指標"><strong>WER／CER</strong>（ASR 書き起こし照合）</td><td data-h="何を見るか">言った内容が入力文と一致するか＝明瞭性・読み飛ばしの検出</td><td data-h="落とし穴">ASR 自体の誤りを含む。自然さ・感情は測れない</td></tr>
+        <tr><td data-h="指標"><strong>SIM</strong>（WavLM 等の話者埋め込み cosine）</td><td data-h="何を見るか">クローンの声の似せ具合</td><td data-h="落とし穴">似ている≠正しく読めている。WER とセットで見る</td></tr>
+        <tr><td data-h="指標"><strong>UTMOS／KOMOS、DNSMOS</strong></td><td data-h="何を見るか">自動 MOS 予測（英語 UTMOS、韓国語 KOMOS 等）</td><td data-h="落とし穴">学習ドメイン外（騒音下、離散トークン系、韻律誤り）で人間評価との相関が崩れるという Interspeech 2026 等の報告がある。DNSMOS は本来ノイズ抑制評価用</td></tr>
+        <tr><td data-h="指標"><strong>Seed-TTS-Eval／CV3-Eval</strong></td><td data-h="何を見るか">ゼロショットクローンの標準セット（英・中が中心、WER＋SIM）</td><td data-h="落とし穴">日・英・中以外、特に<strong>日本語の読み</strong>はほぼ測っていない。Fish S2 の Seed-TTS WER 英0.99%／中0.54%（技術報告＝自己申告系統）等はこの文脈の数字</td></tr>
+        <tr><td data-h="指標"><strong>HF Open TTS Leaderboard</strong>（2026-09-30 公開）</td><td data-h="何を見るか">オープン31モデルを Qwen3-ASR 書き起こしによる WER/CER（日中韓は CER）、RTFx（H200、batch 条件明記）、TTFA、UTMOS／KOMOS、SIM で自動評価。23言語、固定声／クローン別</td><td data-h="落とし穴">自動指標のみで人間選好の代替ではない（主催者自身が明言）。英語デフォルトでは Kokoro が WER 1.46 で首位という結果（第三者記事による転記）</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 class="sub">日本語の読み正確さ ― エラーは「フロントエンド」で起きる</h3>
+    <p>日本語 TTS のエラーは音質ではなく<strong>フロントエンド</strong>で起きる。3層に分解できる。</p>
+    <div class="layers">
+      <div class="layer"><span class="n">LAYER 1</span><h4>テキスト正規化</h4><p>数字・記号・英字。「3/4」は日付か分数か、「10:30」「1日（ついたち／いちにち）」等。</p></div>
+      <div class="layer"><span class="n">LAYER 2</span><h4>G2P（読み推定）</h4><p>同形異音語・同音異義の逆問題：「辛い（からい／つらい）」「市場（しじょう／いちば）」「人気（にんき／ひとけ）」等。日本語には同形異音語が140以上あるとされ、辞書＋前後1〜2トークンの規則では原理的に解けない。助数詞の音便（1本=いっぽん、3本=さんぼん、1分=いっぷん）もここ。</p></div>
+      <div class="layer"><span class="n">LAYER 3</span><h4>アクセント・句切れ</h4><p>単語単体で正しくても、複合語・助詞接続でアクセント結合が変わる。東京式アクセントの核位置は意味差にもなる。</p></div>
+    </div>
+    <p>定量例（いずれも著者／研究側の<strong>自己評価ベンチ</strong>であり、第三者再現ではない点に注意）：個人開発の読み推定モデル JRM（130M）の1268問ベンチでは、難読66問で100% vs 既存最強60.6%、独立260問で91.9% vs 61.9%。ただし拡張942問では全体77.0% vs 61.9%ながら<strong>固有名詞61.7%（同点）・数詞日付63.1%</strong>と、固有名詞と数字が最後まで残ることを示した（Zenn 記事）。松尾研系の辞書＋Transformer＋BERT 型 G2P では、数詞・助数詞100表現で CER 1.42% vs Open JTalk 16.24%、アクセント結合誤り 15.21%→6.04%（Code and DESIGN 記事が紹介）。</p>
+    <div class="note"><b>実務結論：</b>「大規模多言語モデルだから日本語の読みも正しい」は成り立たない。対策はモデル選定とは別に、<b>読み辞書登録／SSML・読みタグ／前処理でひらがな化（ただしアクセントが崩れる副作用あり）／用途固有の回帰テスト文セット</b>を運用に組み込むこと。日本語専用の公開ベンチマークとして定評のあるものは2026年時点で存在せず（Seed／CV3 は日中韓 CER 止まり）、これが最大の空白である。自社用途では ①自前の固定テスト文で CER／目視聴取、②初音遅延と RTFx の実測、③長文（10分超）の一貫性、の3点を必ず自測する。リーダーボードは候補絞り込みに使う。</div>
+  </section>
+
+  <!-- ============ 5. オンデバイス ============ -->
+  <section id="ondevice">
+    <h2><span class="no">05</span>小型・オンデバイス化 ― 勝ち筋は「non-AR」</h2>
+    <p class="intro">効く条件は<strong>非自己回帰（non-AR）であること</strong>。1回の forward で波形まで出す VITS／StyleTTS 系は CPU で実時間を超える。AR コーデック LM は1秒の音声に数十〜数百ステップの逐次推論が必要で、量子化は1ステップを軽くするだけでステップ数を減らせないため CPU では不利――という整理が CPU 向け比較記事で繰り返し示されている。</p>
+
+    <figure class="chartbox">
+      <h3>Kokoro ONNX の量子化ラダー（ファイルサイズ）</h3>
+      <svg viewBox="0 0 720 190" role="img" aria-label="棒グラフ：fp32 約326MB、fp16 約163MB、int8 約92MB、q8f16 約86MB、q4系 約45MB">
+        <g font-family="Noto Sans JP, sans-serif" font-size="12.5">
+          <text x="0" y="20" fill="var(--ink)">fp32</text><rect x="90" y="8" width="326" height="15" fill="var(--chart)"/><text x="422" y="20" class="mono" fill="var(--ink)">約326MB</text>
+          <text x="0" y="52" fill="var(--ink)">fp16</text><rect x="90" y="40" width="163" height="15" fill="var(--chart)"/><text x="259" y="52" class="mono" fill="var(--ink)">約163MB</text>
+          <text x="0" y="84" fill="var(--ink)">int8</text><rect x="90" y="72" width="92" height="15" fill="var(--chart)"/><text x="188" y="84" class="mono" fill="var(--ink)">約92MB</text>
+          <text x="0" y="116" fill="var(--ink)">q8f16</text><rect x="90" y="104" width="86" height="15" fill="var(--chart2)"/><text x="182" y="116" class="mono" fill="var(--ink)">約86MB ← 品質／サイズの実用点とされる</text>
+          <text x="0" y="148" fill="var(--ink)">q4系</text><rect x="90" y="136" width="45" height="15" fill="var(--chart)"/><text x="141" y="148" class="mono" fill="var(--ink)">約45MB</text>
+        </g>
+      </svg>
+      <figcaption>コミュニティ実測系統。q8 が品質／サイズの実用点とされる。</figcaption>
+    </figure>
+
+    <p><strong>ランタイムの収束：</strong>sherpa-onnx（Apache-2.0）が VITS／Piper／Matcha／Kokoro／Kitten／Pocket／Supertonic を単一 API で ONNX 実行し、デスクトップ・モバイル・WASM まで担う。Transformers.js（Kokoro）、MLX（Apple Silicon）、CoreML 変換、WebGPU（ZONOS3-Mini、Woof 移植）も実用域にある。</p>
+    <p><strong>ブラウザ動作の実例：</strong>Kokoro（Transformers.js）、Phonon（ExecuTorch／WebGPU デモ、Apple Watch オフライン動作デモ＝Gradium 自己申告）、Woof（WebGPU、31.7MB）、ZONOS3-Mini（WebGPU、Pixel 9 で初音 &lt;570ms＝自己申告）。</p>
+    <p><strong>数十MB級の新顔（2026）：</strong>KittenTTS nano 約24MB、Phonon 31M 約65MB（初音28ms＝HF Leaderboard の CPU ストリーミング測定として Gradium が転記）、Woof 32〜41MB、Inflect Atom／Micro、Pocket TTS の英語小型版 1.9M〜18.2M（最大25×実時間＝README 自己申告）。ただし小型モデルはほぼ英語専用であり、<strong>日本語の数十MB級は Piper 系カスタム声か VOICEVOX 系が現実解</strong>である。</p>
+    <div class="note"><b>落とし穴：</b>①日本語 G2P の JS 実装が未成熟で、ブラウザ版 Kokoro の日本語がボトルネックになった事例（GitHub Issue 報告）。②eSpeak-NG 依存は <b>GPL-3.0</b> であり、組み込み配布ではライセンス伝播を確認する必要がある（Kokoro／Piper 系共通）。③「CPU で実時間」はコア数・スレッド条件依存で、ベンダー値は Apple Silicon 偏重が多い。低電力 x86／Raspberry Pi では自測必須。</div>
+  </section>
+
+  <!-- ============ 6. 選定 ============ -->
+  <section id="selection">
+    <h2><span class="no">06</span>選定の観点と用途別の第一候補</h2>
+    <p class="intro">見るべき観点は、自然さ／読み正確性／速度（<strong>初音遅延 TTFA</strong> と <strong>RTFx</strong> は分離する。会話用途は TTFA &lt;300ms が目安、バッチ制作は RTFx 優先）／声クローン（必要参照長は3秒〜30分）／感情表現（指示文、タグ、exaggeration、スタイルベクトル。強い表現ほど読み誤り・不安定化が増える）／ライセンス（5層）／コスト（API 従量 $4〜160／100万字 vs 自前 GPU vs ローカル CPU。大量・定常負荷は自前、少量・高品質は API が安い）／運用（API はベンダー廃止リスク、モデル deprecate が頻発）。</p>
+    <div class="usecases">
+      <div class="usecase"><h4>日本語ナレーション（商用・ローカル）</h4><p><b>Style-Bert-VITS2／AivisSpeech</b>（声ライセンス確認）または <b>Qwen3-TTS／CosyVoice 3</b></p></div>
+      <div class="usecase"><h4>日本語・手軽さ（商用）</h4><p><b>VOICEVOX</b>（キャラ規約＋クレジット）／商用 API（<b>Google、ElevenLabs 有料</b>）</p></div>
+      <div class="usecase"><h4>英語ナレーション（商用・ローカル）</h4><p><b>Kokoro</b>（固定声）。クローンが必要なら <b>Qwen3-TTS／Chatterbox</b>（終了リスク承知で）</p></div>
+      <div class="usecase"><h4>会話エージェント</h4><p><b>Qwen3-TTS 0.6B</b>（97ms＝自己申告）／<b>CosyVoice</b>（150ms）／商用 Flash 系</p></div>
+      <div class="usecase"><h4>オフライン組み込み</h4><p><b>Kokoro ONNX q8、Piper、Supertonic 3</b>（日本語なし）。日本語なら <b>VOICEVOX 系</b></p></div>
+      <div class="usecase"><h4>研究・非商用で品質最大</h4><p><b>Fish S2-Pro、F5-TTS</b></p></div>
+    </div>
+    <p class="small" style="margin-top:14px">日本語については、多言語モデルの「日本語対応」と日本語特化（VOICEVOX、Style-Bert-VITS2、AivisSpeech）の自然さ・アクセントは別物として評価すべきである。同音異義語・助数詞・固有名詞の読みは、大規模モデルでもフロントエンド（G2P）問題として残る。</p>
+  </section>
+
+  <footer>
+    <h2>未確認・要再確認の事項（オープンな論点）</h2>
+    <ul>
+      <li>Supertonic 3 の重みライセンスは OpenRAIL-M 説と Apache 説が混在 ― 採用前に原文確認が必要。</li>
+      <li>ZONOS3-Mini のパラメータ数は「総800M／活性100M」と「カード表記886M」の両説がある。</li>
+      <li>Underdog Woof は HF のライセンスファイル（独自 NC 1.0）と公式ランディング（CC BY-NC 4.0）の表記が食い違う ― 厳しい方で読むべきとされる。</li>
+      <li>OpenAI gpt-4o-mini-tts の廃止予定（2027-01-06）、Eleven v4、Gemini 3.8 Flash TTS 等の後継情報は未確定 ― 各社公式ページで再確認が必要。</li>
+      <li>XTTS-v2（Coqui Public Model License）の条文は本調査では再確認を省略 ― 採用時は原文確認必須。</li>
+      <li>VibeVoice の商用可否はライセンス文（MIT）とモデルカード（研究限定）の矛盾によりグレー ― 書面確認なしの採用は推奨されない。</li>
+    </ul>
+    <p>出典の種別について：モデル規模・速度・遅延の数値は、断りのない限りモデルカード／公式リポジトリ／公式技術報告の記載（ベンダー自己申告）。第三者測定として区別したものは、HF Open TTS Leaderboard の自動評価、TTS Arena／Artificial Analysis の選好ボード、コミュニティ実測、TTSLab 等の第三者検証記事による転記。ライセンス・料金は2026年11月14日時点で公式リポジトリ／モデルカード／公式料金・規約ページ（および条文ベースで転記した第三者検証記事）を確認した整理。本ページは法的助言ではありません。</p>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.filters button'));
+  var cards = Array.prototype.slice.call(document.querySelectorAll('#modelGrid .card'));
+  var noResult = document.getElementById('noResult');
+  buttons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      buttons.forEach(function(b){ b.setAttribute('aria-pressed','false'); });
+      btn.setAttribute('aria-pressed','true');
+      var f = btn.getAttribute('data-f');
+      var shown = 0;
+      cards.forEach(function(card){
+        var cats = (card.getAttribute('data-cat')||'').split(' ');
+        var match = (f === 'all') || cats.indexOf(f) !== -1;
+        card.hidden = !match;
+        if (match) shown++;
+      });
+      noResult.hidden = shown !== 0;
+    });
+  });
+})();
+</script>
+</body>
+</html>
